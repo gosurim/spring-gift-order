@@ -145,6 +145,9 @@ class OptionServiceTest {
         product.addOption(optionToDelete);
         product = productRepository.save(product);
 
+        entityManager.flush();
+        entityManager.clear();
+
         existingOption = product.getOptions().stream()
                 .filter(o -> "Color".equals(o.getOptionType()))
                 .findFirst().orElseThrow();
