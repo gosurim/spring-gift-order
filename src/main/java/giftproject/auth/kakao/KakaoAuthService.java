@@ -2,6 +2,7 @@ package giftproject.auth.kakao;
 
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -37,5 +38,24 @@ public class KakaoAuthService {
                 .body(Map.class);
 
         return responseBody.get("access_token").toString();
+    }
+
+    public Map<String, Object> getKakaoUserInfo(String accessToken) throws Exception {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+
+        Map<String, Object> responseBody = RestClient.create()
+                .get()
+                .uri("/v2/user/me")
+                .headers(httpHeaders -> httpHeaders.addAll(headers))
+                .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        (request, response) -> {
+                        })
+                .body(Map.class);
+
+        return responseBody;
     }
 }
