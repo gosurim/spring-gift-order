@@ -22,10 +22,12 @@ public class KakaoLoginController {
         try {
             String accessToken = kakaoAuthService.getKakaoAccessToken(authorizaionCode);
             System.out.println("액세스 토큰 발급 성공: " + accessToken);
+            return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("액세스 토큰 발급 실패: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
