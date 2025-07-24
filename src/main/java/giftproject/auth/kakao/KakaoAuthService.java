@@ -22,7 +22,6 @@ public class KakaoAuthService {
             .build();
 
     public String getKakaoAccessToken(String authorizationCode) {
-        String url = "https://kauth.kakao.com/oauth/token";
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "authorization_code");
@@ -31,7 +30,7 @@ public class KakaoAuthService {
         body.add("code", authorizationCode);
 
         Map<String, Object> responseBody = restClient.post()
-                .uri(url)
+                .uri("/oauth/token")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(body)
                 .retrieve()
