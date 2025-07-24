@@ -17,9 +17,11 @@ public class KakaoAuthService {
     @Value("${kakao.redirect-uri}")
     private String redirectUri;
 
-    private final RestClient restClient = RestClient.create();
+    private final RestClient restClient = RestClient.builder()
+            .baseUrl("htpps://kauth.kakao.com")
+            .build();
 
-    public String getKakaoAccessToken(String authorizationCode){
+    public String getKakaoAccessToken(String authorizationCode) {
         String url = "https://kauth.kakao.com/oauth/token";
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
