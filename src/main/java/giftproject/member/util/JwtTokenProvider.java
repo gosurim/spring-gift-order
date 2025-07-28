@@ -28,13 +28,12 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    public String generateToken(Long memberId, String email) {
+    public String generateToken(Long memberId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationTime);
 
         return Jwts.builder()
                 .setSubject(memberId.toString())
-                .claim("email", email)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
