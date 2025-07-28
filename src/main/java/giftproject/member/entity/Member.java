@@ -22,11 +22,17 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column
     private String email;
 
-    @Column(nullable = false)
+    @Column
     private String password;
+
+    @Column(name = "kakao_access_token")
+    private String kakaoAccessToken;
+
+    @Column(name = "kakao_id", unique = true)
+    private Long kakaoId;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Wish> wishes = new ArrayList<>();
@@ -40,8 +46,20 @@ public class Member {
         this.password = password;
     }
 
+    public Member(Long id, String email, String password, String kakaoAccessToken, Long kakaoId) {
+        this.id = id;
+        this.email = email;
+        this.password = password;
+        this.kakaoAccessToken = kakaoAccessToken;
+        this.kakaoId = kakaoId;
+    }
+
     public Member(String email, String password) {
-        this(null, email, password);
+        this(null, email, password, null, null);
+    }
+
+    public Member(String email, String kakaoAccessToken, Long kakaoId) {
+        this(null, email, null, kakaoAccessToken, kakaoId);
     }
 
     public Long getId() {
@@ -58,6 +76,18 @@ public class Member {
 
     public List<Wish> getWishes() {
         return wishes;
+    }
+
+    public String getKakaoAccessToken() {
+        return kakaoAccessToken;
+    }
+
+    public Long getKakaoId() {
+        return kakaoId;
+    }
+
+    public void setKakaoAccessToken(String kakaoAccessToken) {
+        this.kakaoAccessToken = kakaoAccessToken;
     }
 
     public void update(String email, String password) {
