@@ -2,6 +2,8 @@ package giftproject.auth.kakao;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class KakaoLoginController {
+
+    private static final Logger log = LoggerFactory.getLogger(KakaoLoginController.class);
 
     private final KakaoAuthService kakaoAuthService;
 
@@ -24,10 +28,10 @@ public class KakaoLoginController {
 
         try {
             String accessToken = kakaoAuthService.getKakaoAccessToken(authorizaionCode);
-            System.out.println("액세스 토큰 발급 성공: " + accessToken);
+            log.info("액세스 토큰 발급 성공: {}", accessToken);
 
             Map<String, Object> userInfo = kakaoAuthService.getKakaoUserInfo(accessToken);
-            System.out.println("사용자 정보: " + userInfo);
+            log.info("사용자 정보: {}", userInfo);
 
             response.put("status", "SUCCESS");
             response.put("message", "사용자 정보 획득 성공");
