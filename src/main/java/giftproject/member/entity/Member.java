@@ -114,6 +114,7 @@ public class Member {
         return "Member{" +
                 "id=" + id +
                 ", email='" + email + '\'' +
+                ", kakaoId='" + kakaoId +
                 '}';
     }
 

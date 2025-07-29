@@ -70,10 +70,6 @@ public class Option {
         return product;
     }
 
-    public Long setId(Long id) {
-        return id;
-    }
-
     public String getOptionType() {
         return optionType;
     }

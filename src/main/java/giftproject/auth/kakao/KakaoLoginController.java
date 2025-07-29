@@ -40,7 +40,6 @@ public class KakaoLoginController {
 
             Map<String, Object> userInfo = kakaoAuthService.getKakaoUserInfo(accessToken);
             Long kakaoId = (Long) userInfo.get("id");
-            Map<String, Object> kakaoAccount = (Map<String, Object>) userInfo.get("kakao_account");
             log.info("사용자 정보: {}", userInfo);
             String email = null;
             Member member = memberService.saveOrUpdateKakaoAccessTokenForMember(kakaoId, email,
