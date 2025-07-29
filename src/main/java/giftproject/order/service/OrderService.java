@@ -12,23 +12,29 @@ import giftproject.wishlist.repository.WishRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(KakaoMessageServiceImpl.class);
     private final OrderRepository orderRepository;
     private final OptionRepository optionRepository;
     private final WishRepository wishRepository;
     private final MemberRepository memberRepository;
+    private final KakaoMessageServiceImpl kakaoMessageService;
 
     public OrderService(OrderRepository orderRepository,
             OptionRepository optionRepository,
-            WishRepository wishRepository, MemberRepository memberRepository) {
+            WishRepository wishRepository, MemberRepository memberRepository,
+            KakaoMessageServiceImpl kakaoMessageService) {
         this.orderRepository = orderRepository;
         this.optionRepository = optionRepository;
         this.wishRepository = wishRepository;
         this.memberRepository = memberRepository;
+        this.kakaoMessageService = kakaoMessageService;
     }
 
     @Transactional
@@ -54,6 +60,18 @@ public class OrderService {
                 request.message()
         );
         Order savedOrder = orderRepository.save(newOrder);
+
+        String kakaoAccessToken = member.getKakaoAccessToken();
+        boolean isSent = kakaoMessageService.sendOrderCompletionMessageToMe(
+                kakaoAccessToken,
+                savedOrder,
+                request.message()
+        );
+        if (isSent) {
+            log.info("카카오톡 주문 완료 메시지 전송 성공");
+        } else {
+            log.warn("카카오톡 주문 완료 메시지 전송 실패");
+        }
 
         return OrderResponseDto.from(savedOrder);
     }
