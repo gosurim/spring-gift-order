@@ -1,5 +1,6 @@
 package giftproject.order.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import giftproject.order.entity.Order;
 import java.time.format.DateTimeFormatter;
@@ -7,31 +8,46 @@ import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClient;
 
 @Service
 public class KakaoMessageServiceImpl implements KakaoMessageService {
 
     private static final Logger log = LoggerFactory.getLogger(KakaoMessageServiceImpl.class);
 
-    private final RestClient restClient;
+    private final KakaoMessageCaller kakaoMessageCaller;
     private final ObjectMapper objectMapper;
+    private final String memoUrl;
 
-    private String memoUrl = "https://kapi.kakao.com/v2/api/talk/memo/default/send";
-
-    public KakaoMessageServiceImpl(RestClient.Builder restClientBuilder,
-            ObjectMapper objectMapper) {
-        this.restClient = restClientBuilder.build();
+    public KakaoMessageServiceImpl(KakaoMessageCaller kakaoMessageCaller,
+            ObjectMapper objectMapper, @Value("${kakao.send-memo-url}") String memoUrl) {
+        this.kakaoMessageCaller = kakaoMessageCaller;
         this.objectMapper = objectMapper;
+        this.memoUrl = memoUrl;
     }
 
     @Override
     public boolean sendOrderCompletionMessageToMe(String kakaoAccessToken, Order order,
             String customMessage) {
+        try {
+            String templateObjectJson = createTemplateObject(order, customMessage);
+            MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
+            requestBody.add("template_object", templateObjectJson);
+
+            kakaoMessageCaller.post(memoUrl, kakaoAccessToken, requestBody);
+
+            return true;
+        } catch (Exception e) {
+            log.error("메시지 템플릿 JSON 변환 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private String createTemplateObject(Order order, String customMessage)
+            throws JsonProcessingException {
         String messageText = createMessageText(order, customMessage);
 
         Map<String, Object> body = new HashMap<>();
@@ -43,34 +59,7 @@ public class KakaoMessageServiceImpl implements KakaoMessageService {
         }});
         body.put("button_title", "주문 내역 확인");
 
-        String templateObjectJson;
-        try {
-            templateObjectJson = objectMapper.writeValueAsString(body);
-        } catch (Exception e) {
-            log.error("메시지 템플릿 JSON 변환 실패: {}", e.getMessage());
-            return false;
-        }
-
-        MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
-        requestBody.add("template_object", templateObjectJson);
-
-        try {
-            Map<String, Object> kakaoResponse = restClient.post()
-                    .uri(memoUrl)
-                    .header("Authorization", "Bearer " + kakaoAccessToken)
-                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                    .body(requestBody)
-                    .retrieve()
-                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
-                            (request, response) -> {
-                                throw new RuntimeException("카카오 메시지 전송 실패");
-                            })
-                    .body(new HashMap<String, Object>().getClass());
-            return true;
-        } catch (Exception e) {
-            log.error("카카오톡 메시지 전송 중 예외 발생: {}", e.getMessage(), e);
-            return false;
-        }
+        return objectMapper.writeValueAsString(body);
     }
 
     private String createMessageText(Order order, String customMessage) {
