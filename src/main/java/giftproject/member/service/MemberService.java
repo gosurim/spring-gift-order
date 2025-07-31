@@ -7,6 +7,7 @@ import giftproject.member.repository.MemberRepository;
 import giftproject.member.util.JwtTokenProvider;
 import giftproject.member.util.PasswordEncoder;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class MemberService {
         Member newMember = new Member(requestDto.email(), encodedPassword);
         Member savedMember = memberRepository.save(newMember);
 
-        return jwtTokenProvider.generateToken(savedMember.getId(), savedMember.getEmail());
+        return jwtTokenProvider.generateToken(savedMember.getId());
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +49,22 @@ public class MemberService {
                     "이메일 또는 비밀번호가 일치하지 않습니다.");
         }
 
-        return jwtTokenProvider.generateToken(member.getId(), member.getEmail());
+        return jwtTokenProvider.generateToken(member.getId());
+    }
+
+    @Transactional
+    public Member saveOrUpdateKakaoAccessTokenForMember(Long kakaoId, String email,
+            String kakaoAccessToken) {
+        Optional<Member> existingMember = memberRepository.findByKakaoId(kakaoId);
+
+        Member member;
+        if (existingMember.isPresent()) {
+            member = existingMember.get();
+            member.setKakaoAccessToken(kakaoAccessToken);
+        } else {
+            member = new Member(email, kakaoAccessToken, kakaoId);
+        }
+        return memberRepository.save(member);
     }
 
     @Transactional(readOnly = true)

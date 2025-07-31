@@ -1,7 +1,12 @@
 package giftproject.auth.kakao;
 
+import giftproject.member.entity.Member;
+import giftproject.member.service.MemberService;
+import giftproject.member.util.JwtTokenProvider;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +16,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class KakaoLoginController {
 
-    private final KakaoAuthService kakaoAuthService;
+    private static final Logger log = LoggerFactory.getLogger(KakaoLoginController.class);
 
-    public KakaoLoginController(KakaoAuthService kakaoAuthService) {
+    private final KakaoAuthService kakaoAuthService;
+    private final MemberService memberService;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    public KakaoLoginController(KakaoAuthService kakaoAuthService, MemberService memberService,
+            JwtTokenProvider jwtTokenProvider) {
         this.kakaoAuthService = kakaoAuthService;
+        this.memberService = memberService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @GetMapping
@@ -24,15 +36,21 @@ public class KakaoLoginController {
 
         try {
             String accessToken = kakaoAuthService.getKakaoAccessToken(authorizaionCode);
-            System.out.println("액세스 토큰 발급 성공: " + accessToken);
+            log.info("액세스 토큰 발급 성공: {}", accessToken);
 
             Map<String, Object> userInfo = kakaoAuthService.getKakaoUserInfo(accessToken);
-            System.out.println("사용자 정보: " + userInfo);
+            Long kakaoId = (Long) userInfo.get("id");
+            log.info("사용자 정보: {}", userInfo);
+            String email = null;
+            Member member = memberService.saveOrUpdateKakaoAccessTokenForMember(kakaoId, email,
+                    accessToken);
+
+            String ourServiceJwt = jwtTokenProvider.generateToken(member.getId());
 
             response.put("status", "SUCCESS");
-            response.put("message", "사용자 정보 획득 성공");
-            response.put("accessToken", accessToken);
-            response.put("userInfo", userInfo);
+            response.put("message", "카카오 로그인 및 회원 정보 연동 성공");
+            response.put("ourServiceJwt", ourServiceJwt);
+            response.put("memberId", member.getId());
 
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
